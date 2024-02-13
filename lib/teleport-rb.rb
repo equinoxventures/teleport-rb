@@ -1,3 +1,4 @@
+require 'open3'
 require 'multi_json'
 
 class TeleportRb
@@ -12,9 +13,10 @@ class TeleportRb
 
   def nodes labels={}
     labels_filter = labels.entries.map{|k, v| "#{k}=#{v}"}.join(' ')
-    result = `tctl nodes ls --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{labels_filter}`
-    raise AccessError.new(result) unless $?.exitstatus == 0
-    MultiJson.load(result)
+    command = "tctl nodes ls --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{labels_filter}"
+    stdout, stderr, status = Open3.capture3(command)
+    raise AccessError.new(stderr) unless status == 0
+    MultiJson.load(stdout)
   rescue MultiJson::ParseError => e
     raise ResponseError.new(e)
   end
