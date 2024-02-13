@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "teleport-rb"
-  s.version     = "0.0.0"
+  s.version     = "0.0.1"
   s.summary     = "Ruby gem wrapping the Teleport infra control platform API"
   s.description = "Ruby gem wrapping the Teleport infra control platform API"
   s.authors     = ["Simon Hildebrandt"]
