@@ -11,46 +11,45 @@ class TeleportRb
     @identity_file = identity_file
   end
 
-  private
-
-  def execute_command command, handle_json_errors: true
-    stdout, stderr, status = Open3.capture3(command)
-    if handle_json_errors
-      begin
-        MultiJson.load(stdout)
-      rescue MultiJson::ParseError => e
-        raise ResponseError.new(e)
-      end
-    else
-      raise Error.new("Command: #{command} failed with status #{status} and stderr:\n#{stderr}") unless status == 0
-      puts stdout
-    end
-  end
-
-  public
-
   def nodes labels: {}
-    labels_filter = labels.entries.map{|k, v| "#{k}=#{v}"}.join(' ')
-    command = "tctl nodes ls --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{labels_filter}"
-    execute_command(command)
+    command = "tctl nodes ls --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{stringify_labels(labels)}"
+    execute_json_command(command)
   end
 
   def generate_token type:, ttl: 3600, labels: {}
-    labels_filter = labels.entries.map{|k, v| "#{k}=#{v}"}.join(' ')
-    command = "tctl tokens add --type=#{type} --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{labels_filter}"
-    execute_command(command)
+    command = "tctl tokens add --type=#{type} --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{stringify_labels(labels)}"
+    execute_json_command(command)
   end
 
   def list_tokens labels: {}
-    labels_filter = labels.entries.map{|k, v| "#{k}=#{v}"}.join(' ')
-    command = "tctl tokens ls --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{labels_filter}"
-    execute_command(command)
+    command = "tctl tokens ls --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{stringify_labels(labels)}"
+    execute_json_command(command)
   end
 
   def configure_host roles:, token:, proxy:, nodes_labels: {}
-    labels_filter = nodes_labels.entries.map{|k, v| "#{k}=#{v}"}.join(',')
     roles_string = roles.join(',')
-    command = "teleport configure --roles=#{roles_string} --token=#{token} --proxy=#{proxy} --node-labels #{labels_filter} -o file"
+    command = "teleport configure --roles=#{roles_string} --token=#{token} --proxy=#{proxy} --node-labels #{stringify_labels(nodes_labels)} -o file"
     execute_command(command, handle_json_errors: false)
+  end
+
+  private
+
+  def execute_json_command command
+    json = execute_command(command)
+    MultiJson.load(json)
+    rescue MultiJson::ParseError => e
+      raise ResponseError.new(e)
+    end
+  end
+
+  def execute_command command
+    stdout, stderr, status = Open3.capture3(command)
+    raise Error.new("Command: #{command} failed with status #{status} and stderr:\n#{stderr}") unless status == 0
+    puts stdout
+    stdout
+  end
+
+  def stringify_labels labels: {}
+    labels.entries.map{|k, v| "#{k}=#{v}"}.join(',')
   end
 end
