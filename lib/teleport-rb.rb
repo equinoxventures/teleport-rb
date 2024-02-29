@@ -22,7 +22,7 @@ class TeleportRb
         raise ResponseError.new(e)
       end
     else
-      raise Error.new("Command failed with status #{status} and stderr:\n#{stderr}") unless status == 0
+      raise Error.new("Command: #{command} failed with status #{status} and stderr:\n#{stderr}") unless status == 0
       puts stdout
     end
   end
