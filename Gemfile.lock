@@ -1,0 +1,19 @@
+PATH
+  remote: .
+  specs:
+    teleport-rb (0.0.3)
+      multi_json (~> 1.15.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    multi_json (1.15.0)
+
+PLATFORMS
+  x86_64-linux
+
+DEPENDENCIES
+  teleport-rb!
+
+BUNDLED WITH
+   2.4.19
