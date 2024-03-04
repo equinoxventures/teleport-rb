@@ -35,8 +35,9 @@ class TeleportRb
   private
 
   def execute_json_command command
-    json = execute_command(command)
-    MultiJson.load(json)
+    begin
+      json = execute_command(command)
+      MultiJson.load(json)
     rescue MultiJson::ParseError => e
       raise ResponseError.new(e)
     end
