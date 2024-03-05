@@ -28,29 +28,27 @@ class TeleportRb
 
   def configure_host roles:, token:, proxy:, nodes_labels: {}
     roles_string = roles.join(',')
-    command = "teleport configure --roles=#{roles_string} --token=#{token} --proxy=#{proxy} --node-labels #{stringify_labels(nodes_labels)} -o file"
-    execute_command(command, handle_json_errors: false)
+    labels = nodes_labels.empty? ? "" : "--node-labels #{stringify_labels(nodes_labels)}"
+    command = "teleport configure --roles=#{roles_string} --token=#{token} --proxy=#{proxy} #{labels} -o file"
+    execute_command(command)
   end
 
   private
 
   def execute_json_command command
-    begin
-      json = execute_command(command)
-      MultiJson.load(json)
-    rescue MultiJson::ParseError => e
-      raise ResponseError.new(e)
-    end
+    json, _, _ = execute_command(command)
+    MultiJson.load(json)
+  rescue MultiJson::ParseError => e
+    raise ResponseError.new(e)
   end
 
   def execute_command command
     stdout, stderr, status = Open3.capture3(command)
     raise Error.new("Command: #{command} failed with status #{status} and stderr:\n#{stderr}") unless status == 0
-    puts stdout
-    stdout
+    return stdout, stderr, status
   end
 
-  def stringify_labels labels: {}
+  def stringify_labels labels={}
     labels.entries.map{|k, v| "#{k}=#{v}"}.join(',')
   end
 end
