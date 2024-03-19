@@ -6,9 +6,11 @@ class TeleportRb
   class AccessError < Error; end;
   class ResponseError < Error; end;
 
-  def initialize auth_server:, identity_file:
+  def initialize auth_server:, identity_file:, proxy:
     @auth_server = auth_server
     @identity_file = identity_file
+    @proxy = proxy
+
   end
 
   def nodes labels: {}
@@ -16,20 +18,26 @@ class TeleportRb
     execute_json_command(command)
   end
 
-  def generate_token type:, ttl: 3600, labels: {}
-    command = "tctl tokens add --type=#{type} --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{stringify_labels(labels)}"
+  def generate_token(type:, ttl: 3600, labels: {})
+    labels_argument = labels.empty? ? "" : "--labels=#{stringify_labels(labels)}"
+    command = "tctl tokens add --type=#{type} --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{labels_argument}"
     execute_json_command(command)
   end
 
-  def list_tokens labels: {}
-    command = "tctl tokens ls --format=json --identity=#{@identity_file} --auth-server=#{@auth_server} #{stringify_labels(labels)}"
+  def list_tokens
+    command = "tctl tokens ls --format=json --identity=#{@identity_file} --auth-server=#{@auth_server}"
     execute_json_command(command)
   end
 
-  def configure_host roles:, token:, proxy:, nodes_labels: {}
+  def list_nodes_via_labels labels: {}
+    command = "tsh --proxy=#{@proxy} --identity=identity ls --format=json #{stringify_labels(labels)}"
+    execute_json_command(command)
+  end
+
+  def configure_host roles:, token:, nodes_labels: {}
     roles_string = roles.join(',')
     labels = nodes_labels.empty? ? "" : "--node-labels #{stringify_labels(nodes_labels)}"
-    command = "teleport configure --roles=#{roles_string} --token=#{token} --proxy=#{proxy} #{labels} -o file"
+    command = "teleport configure --roles=#{roles_string} --token=#{token} --proxy=#{@proxy} #{labels} -o file"
     execute_command(command)
   end
 
